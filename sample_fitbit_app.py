@@ -1,6 +1,3 @@
-
-Get Data
-In [ ]:
 %matplotlib inline
 import matplotlib.pyplot as plt
 import fitbit
@@ -12,36 +9,35 @@ import gather_keys_oauth2 as Oauth2
 import pandas as pd 
 import datetime
 
-
 # YOU NEED TO PUT IN YOUR OWN CLIENT_ID AND CLIENT_SECRET
 CLIENT_ID=''
 CLIENT_SECRET=''
-API Authorization
-In [ ]:
+
+# API Authorization
 server=Oauth2.OAuth2Server(CLIENT_ID, CLIENT_SECRET)
 server.browser_authorize()
 ACCESS_TOKEN=str(server.fitbit.client.session.token['access_token'])
 REFRESH_TOKEN=str(server.fitbit.client.session.token['refresh_token'])
 auth2_client=fitbit.Fitbit(CLIENT_ID,CLIENT_SECRET,oauth2=True,access_token=ACCESS_TOKEN,refresh_token=REFRESH_TOKEN)
-5a.) Get One day of Data
-In [ ]:
-# You will have to modify this 
-# depending on when you started to use a fitbit
+
+# Get One day of Data
+# You will have to modify this depending on when you started to use a fitbit
 oneDate = pd.datetime(year = 2019, month = 12, day = 10)
-In [ ]:
+
 help(auth2_client.intraday_time_series)
-In [ ]:
+
 oneDayData = auth2_client.intraday_time_series('activities/heart',
                                                base_date=oneDate,
                                                detail_level='1sec')
-In [ ]:
+#Displaying data
 oneDayData
-In [ ]:
+
+# creating dataframe
 df = pd.DataFrame(oneDayData['activities-heart-intraday']['dataset'])
-In [ ]:
+
 # Look at the first 5 rows of the pandas DataFrame
 df.head()
-In [ ]:
+
 # The first part gets a date in a string format of YYYY-MM-DD
 filename = oneDayData['activities-heart'][0]['dateTime'] +'_intradata'
 
@@ -49,12 +45,12 @@ filename = oneDayData['activities-heart'][0]['dateTime'] +'_intradata'
 df.to_csv(filename + '.csv', index = False)
 df.to_excel(filename + '.xlsx', index = False)
 ## 5b.) Get Multiple Days of Data
-In [ ]:
+
 # startTime is first date of data that I want. 
 # You will need to modify for the date you want your data to start
 startTime = pd.datetime(year = 2019, month = 11, day = 27)
 endTime = pd.datetime.today().date() - datetime.timedelta(days=1)
-In [ ]:
+
 date_list = []
 df_list = []
 allDates = pd.date_range(start=startTime, end = endTime)
@@ -83,7 +79,7 @@ for date, df in zip(date_list, df_list):
     final_df_list.append(df)
 
 final_df = pd.concat(final_df_list, axis = 0)
-In [ ]:
+
 ## Optional Making of the data have more detailed timestamp (day and hour instead of day)
 hoursDelta = pd.to_datetime(final_df.loc[:, 'time']).dt.hour.apply(lambda x: datetime.timedelta(hours = x))
 minutesDelta = pd.to_datetime(final_df.loc[:, 'time']).dt.minute.apply(lambda x: datetime.timedelta(minutes = x))
@@ -91,44 +87,43 @@ secondsDelta = pd.to_datetime(final_df.loc[:, 'time']).dt.second.apply(lambda x:
 
 # Getting the date to also have the time of the day
 final_df['date'] = final_df['date'] + hoursDelta + minutesDelta + secondsDelta
-In [ ]:
+
 final_df.tail()
-In [ ]:
+
 filename = 'all_intradata'
 final_df.to_csv(filename + '.csv', index = False)
-6.) Try to Graph Intraday Data
-In [ ]:
+
+# Try to Graph Intraday Data
+
 # this is bad as time is duplicated over many days fixing the date column will fix the problem
 final_df.plot('time', 'value')
-In [ ]:
+
 # The code below is not efficient as I call to_datetime twice
 hoursDelta = pd.to_datetime(final_df.loc[:, 'time']).dt.hour.apply(lambda x: datetime.timedelta(hours = x))
 minutesDelta = pd.to_datetime(final_df.loc[:, 'time']).dt.minute.apply(lambda x: datetime.timedelta(minutes = x))
 secondsDelta = pd.to_datetime(final_df.loc[:, 'time']).dt.second.apply(lambda x: datetime.timedelta(seconds = x))
-In [ ]:
+
 # Getting the date to also have the time of the day
 final_df['date'] = final_df['date'] + hoursDelta + minutesDelta + secondsDelta
-In [ ]:
-#final_df['temp_value'] = final_df['value'] + random.randint(-2, 2)
-In [ ]:
+
 # this fixed the problem.
 final_df.plot('date', 'value')
 plt.legend('')
-In [ ]:
+
 ## Looking at a couple days only. 
 startDate = pd.datetime(year = 2019, month = 12, day = 24)
 lastDate = pd.datetime(year = 2019, month = 12, day = 27)
 
 coupledays_df = final_df.loc[final_df.loc[:, 'date'].between(startDate, lastDate), :]
-In [ ]:
+
 coupledays_df
-In [ ]:
+
 # Just checking the number of the rows 
 coupledays_df.shape
-In [ ]:
+
 coupledays_df.plot('date', 'value')
 plt.legend('')
-In [ ]:
+
 fig, ax = plt.subplots(figsize=(10, 7))
 
 # Taken from: https://stackoverflow.com/questions/16266019/python-pandas-group-datetime-column-into-hour-and-minute-aggregations
@@ -151,7 +146,7 @@ In [ ]:
 # You will need to modify for the date you want your data to start
 startTime = pd.datetime(year = 2020, month = 1, day = 1)
 endTime = pd.datetime.today().date() - datetime.timedelta(days=1)
-In [ ]:
+
 date_list = []
 resting_list = []
 
@@ -166,7 +161,7 @@ for oneDate in allDates:
     date_list.append(oneDate)
     
     resting_list.append(oneDayData['activities-heart'][0]['value']['restingHeartRate'])
-In [ ]:
+
 fig, ax = plt.subplots(figsize=(10, 7))
 
 ax.plot(date_list, resting_list )
@@ -193,17 +188,17 @@ ax.set_xlabel('Date', fontsize = 24)
 ax.set_ylabel('Resting Heart Rate', fontsize = 24)
 fig.tight_layout()
 fig.savefig('restingHR_graph.png', format = 'png', dpi = 300)
-In [ ]:
+
 resting_df = pd.DataFrame({'date': date_list, 'RHR': resting_list})
-In [ ]:
+
 resting_df.head()
-8.) Get Sleep Data
-In [ ]:
+
+#Get Sleep Data
 startTime = pd.datetime(year = 2020, month = 1, day = 5)
 endTime = pd.datetime.today().date() - datetime.timedelta(days=1)
-In [ ]:
+
 allDates = pd.date_range(start=startTime, end = endTime)
-In [ ]:
+
 date_list = []
 df_list = []
 stages_df_list = []
@@ -246,13 +241,13 @@ for date, df, stages_df in zip(date_list, df_list, stages_df_list):
 final_df = pd.concat(final_df_list, axis = 0)
 
 final_stages_df = pd.concat(final_stages_df_list, axis = 0)
-In [ ]:
+
 columns = final_stages_df.columns[~final_stages_df.columns.isin(['date'])].values
-In [ ]:
+
 columns
-In [ ]:
+
 pd.concat([final_stages_df[columns] + 2, final_stages_df[['date']]], axis = 1)
-In [ ]:
+
 # Export file to csv
 final_df.to_csv('minuteSleep' + '.csv', index = False)
 final_stages_df.to_csv('minutesStagesSleep' + '.csv', index = True)
